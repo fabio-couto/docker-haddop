@@ -1,0 +1,127 @@
+version: "3"
+
+services:
+    namenode:
+        build: ./01_namenode
+        container_name: namenode
+        restart: always
+        ports:
+            - 50070:50070
+        volumes:
+            - namenode:/hadoop/dfs/name
+
+    resourcemanager:
+        build: ./02_resourcemanager
+        container_name: resourcemanager
+        restart: always
+        ports:
+            - 8088:8088
+
+    historyserver:
+        build: ./03_historyserver
+        container_name: historyserver
+        restart: always
+        ports:
+            - 8188:8188
+        volumes: 
+            - historyserver:/hadoop/yarn/timeline
+
+    worker1:
+        build: ./04_workernode
+        container_name: worker1
+        restart: always
+        ports:
+            - 50075:50075
+        volumes: 
+            - worker1:/hadoop/dfs/data
+        depends_on: 
+            - namenode
+            - resourcemanager
+
+    worker2:
+        build: ./04_workernode
+        container_name: worker2
+        restart: always
+        ports:
+            - 50076:50075
+        volumes: 
+            - worker2:/hadoop/dfs/data
+        depends_on: 
+            - namenode
+            - resourcemanager
+
+    worker3:
+        build: ./04_workernode
+        container_name: worker3
+        restart: always
+        ports:
+            - 50077:50075
+        volumes: 
+            - worker3:/hadoop/dfs/data
+        depends_on: 
+            - namenode
+            - resourcemanager
+
+    hivemetastore_postgres:
+        image: postgres:9.6.22
+        container_name: hivemetastore_postgres
+        restart: always
+        volumes:
+            - hivemetastore_postgres:/var/lib/postgresql/data
+        environment:
+            POSTGRES_USER: hive
+            POSTGRES_PASSWORD: hive
+            POSTGRES_DB: metastore
+
+    hivemetastore:
+        build: ./05_hivemetastore
+        container_name: hivemetastore
+        restart: always
+        depends_on: 
+            - hivemetastore_postgres
+
+    hiveserver:
+        build: ./06_hiveserver
+        container_name: hiveserver
+        restart: always
+        ports:
+            - 10002:10002
+        depends_on: 
+            - hivemetastore
+
+    hue:
+        image: gethue/hue:20191107-135001
+        container_name: hue
+        restart: always
+        ports:
+            - 8888:8888
+        volumes:
+            - ./hue-overrides.ini:/usr/share/hue/desktop/conf/z-hue.ini
+        depends_on: 
+            - hue_postgres
+            - namenode
+    
+    hue_postgres:
+        image: postgres:9.6.22
+        container_name: hue_postgres
+        restart: always
+        volumes:
+            - hue_postgres:/var/lib/postgresql/data
+        environment:
+            POSTGRES_USER: hue
+            POSTGRES_PASSWORD: hue
+            POSTGRES_DB: hue
+
+volumes:
+    namenode:
+    historyserver:
+    worker1:
+    worker2:
+    worker3:
+    hivemetastore_postgres:
+    hue_postgres:
+        
+networks:
+    default:
+        name: hadoop
+        enable_ipv6: false
