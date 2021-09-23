@@ -15,7 +15,11 @@ O "mini cluster" está configurado para:
 
 ## Como subir o ambiente
 
-Para efetuar o build das imagens, e iniciar os contêineres, utilize o comando abaixo (*O primeiro build poderá levar alguns minutos*):
+Primeiro, efetue o build da imagem base com o comando abaixo:
+
+`docker build -t hadoop-base:0.1.0 .\00_hadoop-base\`
+
+Em seguida, utilize o comando abaixo para subir os contêineres:
 
 `docker-compose -f "docker-compose.yml" up -d`
 
